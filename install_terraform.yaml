@@ -1,0 +1,43 @@
+---
+- name: Install Terraform on Ubuntu managed nodes
+  hosts: all
+  become: yes  # Use become to execute commands as superuser
+
+  vars:
+    terraform_version: "1.5.0"  # Specify the desired Terraform version
+    terraform_url: "https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+
+  tasks:
+    - name: Ensure required dependencies are installed
+      apt:
+        name: 
+          - curl
+          - unzip
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Download Terraform
+      get_url:
+        url: "{{ terraform_url }}"
+        dest: /tmp/terraform.zip
+
+    - name: Unzip Terraform
+      unarchive:
+        src: /tmp/terraform.zip
+        dest: /usr/local/bin/
+        remote_src: yes
+
+    - name: Remove Terraform zip file
+      file:
+        path: /tmp/terraform.zip
+        state: absent
+
+    - name: Verify Terraform installation
+      command: terraform version
+      register: terraform_version_output
+      changed_when: false
+
+    - name: Display Terraform version
+      debug:
+        var: terraform_version_output.stdout
+
